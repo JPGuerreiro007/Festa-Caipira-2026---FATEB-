@@ -325,20 +325,22 @@ function enviar(){
   const idPedido = Date.now().toString().slice(-6); 
   const dadosParaOQR = `ID:${idPedido} | Cliente:${nome} | Sabores:${saboresTexto}`;
   
-  // Usamos a API do Google Charts
-  const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=${encodeURIComponent(dadosParaOQR)}`;
+  // Usando a API goQR.me (mais estável e sem erro de Not Found)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(dadosParaOQR)}`;
   
-  console.log("Gerando QR Code para:", dadosParaOQR); // Isso ajuda a ver se o código rodou no VS Code
+  console.log("Link do QR Code:", qrUrl); // Copie este link do console se precisar testar
 
   const qrImg = document.getElementById('qrcode-img');
   const qrInstrucao = document.getElementById('qrcode-instrucao');
 
   if (qrImg) {
     qrImg.src = qrUrl;
-    qrImg.style.display = 'block'; // Garante que a imagem apareça
-    if(qrInstrucao) qrInstrucao.style.display = 'block';
+    qrImg.onload = function() {
+        // Só mostra a imagem quando ela terminar de carregar de verdade
+        this.style.display = 'block';
+        if(qrInstrucao) qrInstrucao.style.display = 'block';
+    };
   }
-
   // Troca de telas
   document.getElementById('main-form').style.display = 'none';
   const s = document.getElementById('sucesso');
