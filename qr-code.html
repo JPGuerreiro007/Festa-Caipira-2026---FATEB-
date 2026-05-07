@@ -167,7 +167,7 @@
     <label>Sabor do pastel <span class="req">*</span></label>
     <select id="sabor">
       <option value="">Selecione o sabor...</option>
-      <option value="Carne">🥩 Carne</option>             
+      <option value="Carne">🥩 Carne</option>            
       <option value="Queijo">🧀 Queijo</option>
     </select>
   </div>
@@ -284,7 +284,6 @@ function enviar(){
   const ret = document.getElementById('retirada').value;
   const err = document.getElementById('erro');
   
-  // Validação: Verifica se os campos estão preenchidos e se há pelo menos 1 pastel
   if(!nome || !email || !tel || !ret || qty === 0){
     err.style.display='block';
     err.textContent='Por favor, preencha todos os dados e escolha pelo menos 1 pastel.';
@@ -298,17 +297,14 @@ function enviar(){
   }
   err.style.display='none';
 
-  // Define quem retira e o valor total formatado
   const terceiro = ret === 'outra' ? document.getElementById('terceiro').value.trim() : nome;
   const total = (qty * 8).toFixed(2).replace('.',',');
 
-  // Monta o resumo de sabores para a mensagem e para o QR Code
   let resumoSabores = [];
   if (sabores['Carne'] > 0) resumoSabores.push(`${sabores['Carne']}x Carne`);
   if (sabores['Queijo'] > 0) resumoSabores.push(`${sabores['Queijo']}x Queijo`);
   const saboresTexto = resumoSabores.join(', ');
   
-  // Texto formatado para o WhatsApp
   const msg =
     `🎪 *PEDIDO - Festa Junina 2026*\n\n` +
     `👤 *Comprador:* ${nome}\n` +
@@ -321,35 +317,36 @@ function enviar(){
     `🏷️ *Vendido por:* ${VENDEDOR}\n\n` +
     `⬇️ Comprovante do Pix em anexo!`;
 
-  // 1. Configura o link do WhatsApp (Número do Ygor: 18 99188-8949)
+  // Link do WhatsApp
   const link = document.getElementById('btn-whats-link');
   link.href = 'https://wa.me/5518991889849?text=' + encodeURIComponent(msg);
     
-  // 2. GERAÇÃO DINÂMICA DO QR CODE
-  // Criamos um ID único baseado no timestamp (últimos 6 dígitos)
+  // --- GERADOR DE QR CODE REFORÇADO ---
   const idPedido = Date.now().toString().slice(-6); 
   const dadosParaOQR = `ID:${idPedido} | Cliente:${nome} | Sabores:${saboresTexto}`;
   
-  // URL da API do Google Charts que gera a imagem do QR Code
+  // Usamos a API do Google Charts
   const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=${encodeURIComponent(dadosParaOQR)}`;
   
-  // Ativa a exibição da imagem e da instrução na tela de sucesso
+  console.log("Gerando QR Code para:", dadosParaOQR); // Isso ajuda a ver se o código rodou no VS Code
+
   const qrImg = document.getElementById('qrcode-img');
+  const qrInstrucao = document.getElementById('qrcode-instrucao');
+
   if (qrImg) {
     qrImg.src = qrUrl;
-    qrImg.style.display = 'block';
-    document.getElementById('qrcode-instrucao').style.display = 'block';
+    qrImg.style.display = 'block'; // Garante que a imagem apareça
+    if(qrInstrucao) qrInstrucao.style.display = 'block';
   }
 
-  // 3. Troca a tela: esconde o formulário e mostra a tela de sucesso
+  // Troca de telas
   document.getElementById('main-form').style.display = 'none';
   const s = document.getElementById('sucesso');
   s.style.display = 'flex';
   
-  // 4. Atualiza o texto de confirmação final
   document.getElementById('sucesso-msg').innerHTML =
   `<strong>${nome}</strong>, seu pedido de <strong>${qty} ${qty > 1 ? 'pastéis' : 'pastel'}</strong> no valor de <strong>R$ ${total}</strong> foi confirmado!<br><br>` +
-  `Agora tire um print do QR Code abaixo e clique no botão para enviar o comprovante ao Ygor! 👇`;
+  `Tire um print do QR Code abaixo e clique no botão para enviar o comprovante ao Ygor! 👇`;
 }
 
 function resetar(){
