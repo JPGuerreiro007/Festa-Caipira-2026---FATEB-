@@ -150,6 +150,11 @@
           <div class="divider"></div>
 
           <div class="form-group">
+            <label>Nome do Vendedor <span class="req">*</span></label>
+            <input type="text" id="vendedor_nome" placeholder="Quem te vendeu o pastel?">
+          </div>
+
+          <div class="form-group">
             <label>Seu nome <span class="req">*</span></label>
             <input type="text" id="nome" placeholder="Nome completo">
           </div>
@@ -231,18 +236,20 @@ document.getElementById('retirada').addEventListener('change', function(){
   document.getElementById('terceiro-grupo').style.display = this.value === 'outra' ? 'block' : 'none';
 });
 
-function enviar(){
+async function enviar(){
   const nome = document.getElementById('nome').value.trim();
   const email = document.getElementById('email').value.trim();
   const tel = document.getElementById('telefone').value.trim();
   const ret = document.getElementById('retirada').value;
+  const vendedor = document.getElementById('vendedor_nome').value.trim();
   const err = document.getElementById('erro');
   
-  if(!nome||!email||!tel||!ret||qty === 0){
+  if(!nome || !email || !tel || !ret || !vendedor || qty === 0){
     err.style.display='block';
-    err.textContent='Preencha os dados e escolha pelo menos 1 pastel.';
+    err.textContent='Preencha todos os campos, incluindo o nome do vendedor.';
     return;
   }
+  
   if(!email.includes('@')){
     err.style.display='block';
     err.textContent='Por favor, insira um e-mail válido.';
@@ -250,6 +257,7 @@ function enviar(){
   }
   err.style.display='none';
 
+  // --- CORREÇÃO AQUI: Definimos os valores ANTES de usar no fetch ---
   const terceiro = ret === 'outra' ? document.getElementById('terceiro').value.trim() : nome;
   const total = (qty * 8).toFixed(2).replace('.',',');
 
@@ -257,7 +265,30 @@ function enviar(){
   if (sabores['Carne'] > 0) resumoSabores.push(`${sabores['Carne']}x Carne`);
   if (sabores['Queijo'] > 0) resumoSabores.push(`${sabores['Queijo']}x Queijo`);
   const saboresTexto = resumoSabores.join(', ');
-  
+
+  // URL gerada na implantação do Google Apps Script
+  const URL_PLANILHA = 'https://script.google.com/macros/s/AKfycbyQejlNNDHvhbFwp8L3T7EQNr74agR2Gu8qAx3Fr91PQNBb80yk2UK-8T579c6K05hUtw/exec';
+
+  try {
+    // Adicionei o "await" para uma execução mais limpa
+    await fetch(URL_PLANILHA, {
+      method: 'POST',
+      mode: 'no-cors', 
+      cache: 'no-cache',
+      body: JSON.stringify({
+        vendedor: vendedor,
+        comprador: nome,
+        carne: sabores['Carne'],
+        queijo: sabores['Queijo'],
+        total: (qty * 8)
+      })
+    });
+    console.log("Dados enviados para a planilha!");
+  } catch (e) {
+    console.error("Erro ao salvar na planilha", e);
+  }
+
+  // Montagem da mensagem WhatsApp
   const msg =
     `🎪 *PEDIDO - Festa Junina 2026*\n\n` +
     `👤 *Comprador:* ${nome}\n` +
@@ -267,33 +298,38 @@ function enviar(){
     `🍽️ *Sabores:* ${saboresTexto}\n` +
     `💰 *Total:* R$ ${total}\n` +
     `📦 *Retirada:* ${terceiro}\n\n` +
-    `🏷️ *Vendido por:* ${VENDEDOR}\n\n` +
+    `🏷️ *Vendido por:* ${vendedor}\n\n` +
     `⬇️ Comprovante do Pix em anexo!`;
 
+  // Número ajustado conforme sua última alteração
   const link = document.getElementById('btn-whats-link');
-  link.href = 'https://wa.me/5518998093404?text=' + encodeURIComponent(msg);
+  link.href = 'https://wa.me/5518991889849?text=' + encodeURIComponent(msg);
     
   document.getElementById('main-form').style.display='none';
   const s = document.getElementById('sucesso');
   s.style.display='flex';
   document.getElementById('sucesso-msg').innerHTML =
-  `<strong>${nome}</strong>, seu pedido de <strong>${qty} ${qty > 1 ? 'pastéis' : 'pastel'}</strong> no valor de <strong>R$ ${total}</strong> foi confirmado!<br><br>` +
-  `Agora clique no botão abaixo para enviar os dados ao Ygor e anexar o comprovante do Pix! 👇`;
+  `<strong>${nome}</strong>, pedido de <strong>${qty} pastéis</strong> (R$ ${total}) vendido por <strong>${vendedor}</strong>!<br><br>` +
+  `Clique abaixo para enviar o comprovante ao Ygor.`;
 }
 
 function resetar(){
-  ['nome','email','telefone','terceiro'].forEach(id=>document.getElementById(id).value='');
+  // Adicione 'vendedor_nome' na lista de limpeza
+  ['nome','email','telefone','terceiro','vendedor_nome'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  
+  // ... restante do código de resetar (sabores, total, telas) ...
   document.getElementById('retirada').value='';
   document.getElementById('terceiro-grupo').style.display='none';
   document.getElementById('erro').style.display='none';
-  
   sabores = { 'Carne': 0, 'Queijo': 0 };
   document.getElementById('qty-Carne').textContent = '0';
   document.getElementById('qty-Queijo').textContent = '0';
   qty = 0; 
   document.getElementById('qty-display').textContent = '0';
   document.getElementById('total-val').textContent = 'R$ 0,00';
-  
   document.getElementById('main-form').style.display='block';
   document.getElementById('sucesso').style.display='none';
   window.scrollTo(0, 0);
